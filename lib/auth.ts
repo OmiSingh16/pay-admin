@@ -5,6 +5,7 @@ import { sessions, admins } from "@/db/schema";
 import { eq, and, gt, sql } from "drizzle-orm";
 import { hasPermission, Permission, Role } from "./permissions";
 
+// Production mein __Host-session use karo, par domain specify mat karo
 const SESSION_COOKIE = process.env.NODE_ENV === "production" ? "__Host-session" : "session";
 const SESSION_DURATION = 8 * 60 * 60 * 1000; // 8 hours
 
@@ -30,13 +31,22 @@ export async function createSession(adminId: string, ip?: string, userAgent?: st
   });
 
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE, token, {
+  
+  // Cookie set karo - __Host-session ke liye secure: true, path: "/", aur domain: undefined hona chahiye
+  const cookieOptions: any = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     expires: expiresAt,
-  });
+  };
+  
+  // __Host-session ke liye domain attribute nahi hona chahiye
+  if (process.env.NODE_ENV === "production") {
+    delete cookieOptions.domain;
+  }
+  
+  cookieStore.set(SESSION_COOKIE, token, cookieOptions);
   
   return token;
 }

@@ -31,7 +31,7 @@ export async function loginAction(prevState: any, formData: FormData) {
   const userAgent = headersList.get("user-agent") || "Unknown";
 
   // Rate Limiting (5 failures in 15 mins)
-  const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
+  // new Date() ki jagah sql use kiya taaki prerender error na aaye
   const recentFailures = await db
     .select({ count: sql<number>`count(*)` })
     .from(loginAttempts)
@@ -39,7 +39,7 @@ export async function loginAction(prevState: any, formData: FormData) {
       and(
         eq(loginAttempts.email, email),
         eq(loginAttempts.success, false),
-        gte(loginAttempts.createdAt, fifteenMinsAgo)
+        gte(loginAttempts.createdAt, sql`now() - interval '15 minutes'`)
       )
     );
 
@@ -73,7 +73,7 @@ export async function loginAction(prevState: any, formData: FormData) {
   await db.insert(loginAttempts).values({ email, ip, success: true });
   await createSession(admin.id, ip, userAgent);
   
-   return { success: true };
+  return { success: true };
 }
 
 export async function logoutAction() {

@@ -1,9 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
+  // Experimental features off karo taaki production stable rahe
+  cacheComponents: false,
+  partialPrefetching: false,
+  
+  // Turbopack config (agar use kar rahe ho toh)
   turbopack: {
     rules: {
       "*.css": {
