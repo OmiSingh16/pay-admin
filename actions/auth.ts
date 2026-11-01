@@ -78,5 +78,5 @@ export async function loginAction(prevState: any, formData: FormData) {
 
 export async function logoutAction() {
   await destroySession();
-  redirect("/login");
+  return { success: true };
 }
