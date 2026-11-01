@@ -120,11 +120,14 @@ export function SettingsClient({ admin, depositOrders, withdrawOrders }: { admin
       <div className="bg-[var(--panel)] rounded-[var(--r)] p-6 relative">
         {/* Logout button - Top Right */}
         <button 
-          onClick={() => logoutAction()} 
-          className="absolute top-4 right-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--bad-soft)] text-[var(--bad)] font-bold text-sm hover:bg-[var(--bad)] hover:text-white transition-colors md:static md:ml-auto"
-        >
-          <LogOut className="w-4 h-4" /> <span className="hidden md:inline">Logout</span>
-        </button>
+  onClick={async () => {
+    await logoutAction();
+    window.location.href = "/login"; // <-- Ye line add karo
+  }} 
+  className="absolute top-4 right-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--bad-soft)] text-[var(--bad)] font-bold text-sm hover:bg-[var(--bad)] hover:text-white transition-colors md:static md:ml-auto"
+>
+  <LogOut className="w-4 h-4" /> <span className="hidden md:inline">Logout</span>
+</button>
 
         {/* Profile Info */}
         <div className="flex items-center gap-4 pr-20 md:pr-0 md:flex-row md:justify-between md:items-center md:gap-4">
