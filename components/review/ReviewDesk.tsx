@@ -48,7 +48,7 @@ function TicketContent({ order, onReview }: { order: Order; onReview: (a: "appro
       header={
         <>
           <div className="flex justify-between items-center">
-            <span className="text-[var(--ink-2)] text-sm">Deposit #{order.id}</span>
+            <span className="text-[var(--ink-2)] text-sm">Deposit </span>
             <span className={`px-3 py-1 rounded-lg border-2 border-current font-extrabold rotate-[-6deg] ${order.status === "pending" ? "text-[var(--warn)]" : order.status === "approved" ? "text-[var(--ok)]" : "text-[var(--bad)]"}`}>
               {cap(order.status)}
             </span>

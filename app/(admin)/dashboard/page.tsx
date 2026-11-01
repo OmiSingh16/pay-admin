@@ -9,6 +9,7 @@ import { Suspense } from "react";
 import { LiveFeed } from "@/components/ui/LiveFeed";
 import { Heatmap } from "@/components/charts/Heatmap";
 import { getTopUsers } from "@/lib/queries/activity";
+// import { MobileHeader } from "@/components/layout/MobileHeader";
 
 async function DashboardContent() {
   await connection();
@@ -30,12 +31,15 @@ async function DashboardContent() {
 
   return (
     <div className="p-4 md:p-6 grid gap-4 md:gap-6">
-      {/* Header */}
-      <header className="flex justify-between items-center gap-3">
+            {/* Mobile Header (Client Component) */}
+      {/* <MobileHeader /> */}
+
+      {/* Desktop Header (Only for large screens) */}
+      <header className="hidden md:flex justify-between items-center gap-3">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight">Good evening, Lion</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight">Good evening, Admin</h1>
           <p className="text-[var(--ink-2)] text-[13px] mt-1">
-            {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })} · Here is what changed today.
+            {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
           </p>
         </div>
         <span className="inline-flex gap-2 items-center bg-[var(--panel)] px-3.5 py-2 rounded-full font-bold text-[13px]">
@@ -43,6 +47,20 @@ async function DashboardContent() {
           Live
         </span>
       </header>
+
+      {/* Mobile Greeting Card (Only for small screens) */}
+      <div className="md:hidden bg-gradient-to-br from-[var(--navy)] to-[var(--navy-2)] p-5 rounded-[var(--r)] text-white shadow-lg relative overflow-hidden">
+        <div className="relative z-10">
+          <p className="text-[var(--saffron)] text-sm font-bold mb-1">Welcome back,</p>
+          <h1 className="text-2xl font-extrabold tracking-tight mb-1">Admin</h1>
+          <p className="text-[#8da0c0] text-xs">
+            {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
+          </p>
+        </div>
+        {/* Decorative Circle */}
+        <div className="absolute -right-4 -top-4 w-24 h-24 rounded-full bg-white/5" />
+        <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-white/5" />
+      </div>
 
       {/* Bento Grid */}
       <section className="grid grid-cols-12 gap-4 md:gap-6">

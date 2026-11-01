@@ -6,6 +6,7 @@ import { adminCreateDeposit, adminCreateWithdraw, adminCreateUser, adminDeleteDe
 import { LogOut, Trash2, UserPlus, ArrowDownLeft, ArrowUpRight, Key, X } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { useRouter } from "next/navigation";
+import { LogoUploader } from "./LogoUploader";
 
 type PendingDeposit = { id: number; utr: string };
 type PendingWithdraw = { id: number; upiId: string };
@@ -76,7 +77,7 @@ export function SettingsClient({ admin, depositOrders, withdrawOrders }: { admin
     <div className="grid gap-6">
       
       {/* Premium Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* Deposit Card */}
         <button onClick={() => setActiveAction("create_deposit")} className="group bg-[var(--panel)] rounded-[var(--r)] p-6 text-left hover:bg-[var(--navy)] hover:text-white transition-all duration-300 shadow-sm hover:shadow-xl">
@@ -138,6 +139,9 @@ export function SettingsClient({ admin, depositOrders, withdrawOrders }: { admin
           </div>
         </div>
       </div>
+
+       {/* Logo Uploader */}
+      <LogoUploader />
 
       {/* Modal for Active Action */}
       {activeAction && (

@@ -11,7 +11,7 @@ const ICONS = {
   withdraw: "M3 7h18v10H3zM12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5",
   upi: "M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3h-3z",
   users: "M16 11a4 4 0 1 0-8 0M4 21a8 8 0 0 1 16 0",
-settings: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z",
+  settings: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z",
   chev: "M15 6l-6 6 6 6",
   out: "M9 4H5v16h4M16 8l4 4-4 4M20 12H9",
 };
@@ -39,6 +39,7 @@ const ico = (d: string) => (
 export default function Sidebar({ counts = {} }: { counts?: Record<string, number> }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [logo, setLogo] = useState<string | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("sb-open");
@@ -46,6 +47,18 @@ export default function Sidebar({ counts = {} }: { counts?: Record<string, numbe
     setIsOpen(open);
     document.documentElement.classList.toggle("sb-open", open);
 
+    // Load logo
+    const savedLogo = localStorage.getItem("payorbit_logo");
+    if (savedLogo) setLogo(savedLogo);
+
+    // Listen for logo updates
+    const handleLogoUpdate = () => {
+      const updatedLogo = localStorage.getItem("payorbit_logo");
+      setLogo(updatedLogo);
+    };
+    window.addEventListener("logoUpdated", handleLogoUpdate);
+
+    // Keyboard shortcut
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "[" && !["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement).tagName)) {
         setIsOpen((prev) => {
@@ -57,7 +70,11 @@ export default function Sidebar({ counts = {} }: { counts?: Record<string, numbe
       }
     };
     window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
+
+    return () => {
+      window.removeEventListener("logoUpdated", handleLogoUpdate);
+      window.removeEventListener("keydown", handleKey);
+    };
   }, []);
 
   const toggle = () => {
@@ -70,9 +87,9 @@ export default function Sidebar({ counts = {} }: { counts?: Record<string, numbe
   };
 
   const handleLogout = async () => {
-  await logoutAction();
-  window.location.href = "/login";
-};
+    await logoutAction();
+    window.location.href = "/login";
+  };
 
   return (
     <nav className={`rail bg-[var(--navy)] rounded-r-[28px] flex flex-col sticky top-0 h-[100dvh] shrink-0 z-30 transition-all 
@@ -82,12 +99,20 @@ export default function Sidebar({ counts = {} }: { counts?: Record<string, numbe
       {/* Top Brand & Toggle */}
       <div className={`flex ${isOpen ? "flex-row justify-between" : "flex-col items-center"} gap-2.5 mb-3 px-2 pt-4 max-md:hidden`}>
         <Link href="/dashboard" className="flex items-center gap-3 text-white">
-          <span className="w-[42px] h-[42px] rounded-[14px] bg-[var(--saffron)] grid place-items-center font-extrabold text-[var(--navy)] shrink-0 text-[13px]">
-            JPG
-          </span>
+          {logo ? (
+            <img 
+              src={logo} 
+              alt="Logo" 
+              className="w-[42px] h-[42px] rounded-[14px] object-cover shrink-0" 
+            />
+          ) : (
+            <span className="w-[42px] h-[42px] rounded-[14px] bg-[var(--saffron)] grid place-items-center font-extrabold text-[var(--navy)] shrink-0 text-[13px]">
+              PO
+            </span>
+          )}
           {isOpen && (
             <span className="leading-tight whitespace-nowrap">
-              <b className="block text-[17px] font-extrabold">JPG Pay</b>
+              <b className="block text-[17px] font-extrabold">PayOrbit</b>
               <small className="text-[#8da0c0] text-[12px]">Admin console</small>
             </span>
           )}
@@ -119,18 +144,11 @@ export default function Sidebar({ counts = {} }: { counts?: Record<string, numbe
                     h-[46px] ${active ? "bg-[var(--navy-2)] text-[var(--saffron)]" : "text-[#8da0c0] hover:bg-[var(--navy-2)] hover:text-white"}`}
                   title={label}
                 >
-                  {/* Active Indicator (Desktop Only) */}
                   {active && isOpen && (
                     <span className="absolute -left-3 top-3 bottom-3 w-1 rounded-r bg-[var(--saffron)] max-md:hidden" />
                   )}
-                  
-                  {/* Icon */}
                   {ico(ICONS[id as keyof typeof ICONS])}
-                  
-                  {/* Label (Hidden on Mobile) */}
                   {isOpen && <span className="max-md:hidden">{label}</span>}
-                  
-                  {/* Badge (Hidden on Mobile) */}
                   {badge ? (
                     <span className={`min-w-[17px] h-[17px] rounded-full bg-[var(--saffron)] text-[var(--navy)] text-[10.5px] font-extrabold grid place-items-center px-1 ${isOpen ? "ml-auto" : "absolute top-1 right-1"} max-md:hidden`}>
                       {badge}
@@ -147,11 +165,11 @@ export default function Sidebar({ counts = {} }: { counts?: Record<string, numbe
       <div className={`mt-auto flex ${isOpen ? "flex-row justify-between bg-[var(--navy-2)] rounded-2xl p-2.5" : "flex-col items-center"} gap-2 max-md:hidden`}>
         <div className="flex items-center gap-2.5 min-w-0">
           <span className="w-[38px] h-[38px] rounded-full bg-gradient-to-br from-[#ffb347] to-[var(--saffron)] text-[var(--navy)] grid place-items-center font-extrabold shrink-0">
-            L
+            H
           </span>
           {isOpen && (
             <span className="leading-tight whitespace-nowrap text-white">
-              <b>Lion</b>
+              <b>Admin</b>
               <small className="block text-[#8da0c0] text-[12px]">Owner</small>
             </span>
           )}

@@ -72,7 +72,7 @@ function WithdrawTicket({
       header={
         <>
           <div className="flex justify-between items-center">
-            <span className="text-[var(--ink-2)] text-sm">Withdrawal #{order.id}</span>
+            <span className="text-[var(--ink-2)] text-sm">Withdrawal</span>
             <span className={`px-3 py-1 rounded-lg border-2 border-current font-extrabold rotate-[-6deg] ${order.status === "pending" ? "text-[var(--warn)]" : order.status === "approved" ? "text-[var(--ok)]" : "text-[var(--bad)]"}`}>
               {cap(order.status)}
             </span>
@@ -90,7 +90,7 @@ function WithdrawTicket({
                 {copied ? <span className="text-[var(--ok)] text-[10px] font-bold">Copied</span> : <Copy className="w-3 h-3" />}
               </button>
             </dd>
-            <dt className="text-[var(--ink-2)]">Bank app</dt>
+            <dt className="text-[var(--ink-2)]">UPI app</dt>
             <dd className="font-bold text-right">{bankName}</dd>
             <dt className="text-[var(--ink-2)]">User ID</dt>
             <dd className="font-bold text-right">{order.userId}</dd>
