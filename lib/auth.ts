@@ -37,8 +37,7 @@ export async function createSession(adminId: string, ip?: string, userAgent?: st
     path: "/",
     expires: expiresAt,
   });
-  console.log("✅ Cookie set successfully:", token.substring(0, 10) + "..."); 
-
+  
   return token;
 }
 
@@ -59,7 +58,7 @@ export async function getSession() {
     .where(
       and(
         eq(sessions.tokenHash, tokenHash),
-        gt(sessions.expiresAt, sql`now()`), // <-- Ye change karo
+        gt(sessions.expiresAt, sql`now()`),
         eq(admins.isActive, true)
       )
     )
@@ -68,6 +67,7 @@ export async function getSession() {
   if (!result.length) return null;
   return result[0];
 }
+
 export async function destroySession() {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;

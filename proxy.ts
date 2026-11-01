@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const cookieName = process.env.NODE_ENV === "production" ? "__Host-session" : "session";
 const sessionCookie = request.cookies.get(cookieName)?.value;
   const { pathname } = request.nextUrl;

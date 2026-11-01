@@ -11,13 +11,12 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (state?.success) {
-      // Thoda wait karo taaki cookie browser mein save ho jaye
-      setTimeout(() => {
-        router.push("/dashboard");
-        router.refresh();
-      }, 100);
+      // Client-side redirect taaki React Error #441 na aaye
+      router.push("/dashboard");
+      router.refresh();
     }
   }, [state, router]);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--bg)] p-4">
       <div className="w-full max-w-[400px] bg-[var(--panel)] rounded-[18px] p-8 shadow-xl">
