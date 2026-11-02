@@ -9,7 +9,7 @@ const bricolage = Bricolage_Grotesque({
 });
 
 export const metadata: Metadata = {
-  title: "JPG Pay Admin",
+  title: "Pay-Orbit",
   description: "Payments admin panel",
 };
 
