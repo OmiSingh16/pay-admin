@@ -87,9 +87,9 @@ export default function Sidebar({ counts = {} }: { counts?: Record<string, numbe
   };
 
   const handleLogout = async () => {
-    await logoutAction();
-    window.location.href = "/login";
-  };
+  await logoutAction();
+  window.location.href = "/login?logout=true";
+};
 
   return (
     <nav className={`rail bg-[var(--navy)] rounded-r-[28px] flex flex-col sticky top-0 h-[100dvh] shrink-0 z-30 transition-all 

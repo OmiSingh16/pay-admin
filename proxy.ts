@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 
 export function proxy(request: NextRequest) {
   const cookieName = process.env.NODE_ENV === "production" ? "__Host-session" : "session";
-const sessionCookie = request.cookies.get(cookieName)?.value;
+  const sessionCookie = request.cookies.get(cookieName)?.value;
   const { pathname } = request.nextUrl;
 
   // Static files aur API ko chhod do
@@ -13,7 +13,14 @@ const sessionCookie = request.cookies.get(cookieName)?.value;
 
   // Login page pe ho
   if (pathname === "/login") {
-    // Agar cookie hai, toh dashboard bhejo
+    // Agar logout param hai, toh redirect mat karo (loop se bacho)
+    const isLogout = request.nextUrl.searchParams.get("logout") === "true";
+    if (isLogout) {
+      // Cookie ho ya na ho, login page hi dikhao
+      return NextResponse.next();
+    }
+    
+    // Agar cookie hai aur logout param nahi hai, toh dashboard bhejo
     if (sessionCookie) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }

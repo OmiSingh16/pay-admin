@@ -121,9 +121,9 @@ export function SettingsClient({ admin, depositOrders, withdrawOrders }: { admin
         {/* Logout button - Top Right */}
         <button 
   onClick={async () => {
-    await logoutAction();
-    window.location.href = "/login"; // <-- Ye line add karo
-  }} 
+  await logoutAction();
+  window.location.href = "/login?logout=true";
+}}
   className="absolute top-4 right-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--bad-soft)] text-[var(--bad)] font-bold text-sm hover:bg-[var(--bad)] hover:text-white transition-colors md:static md:ml-auto"
 >
   <LogOut className="w-4 h-4" /> <span className="hidden md:inline">Logout</span>
