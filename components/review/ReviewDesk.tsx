@@ -21,7 +21,6 @@ type Order = {
 const inr = (n: number) => "₹" + n.toLocaleString("en-IN");
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-// Sparkline Component (exact HTML jaisa)
 function Sparkline({ orders }: { orders: Order[] }) {
   const B = 12, now = Date.now(), b = Array(B).fill(0);
   orders.forEach(o => {
@@ -64,7 +63,7 @@ function TicketContent({ order, onReview }: { order: Order; onReview: (a: "appro
               </button>
             </dd>
             <dt className="text-[var(--ink-2)]">User ID</dt>
-<dd className="font-bold text-right">{order.userId}</dd>
+            <dd className="font-bold text-right">{order.userId}</dd>
             <dt className="text-[var(--ink-2)]">Placed</dt>
             <dd className="font-bold text-right">{order.formattedDate}</dd>
           </dl>
@@ -102,16 +101,17 @@ export function ReviewDesk({ initialOrders }: { initialOrders: Order[] }) {
 
   const timers = useRef<Record<number, NodeJS.Timeout>>({});
   const lockRef = useRef<Set<number>>(new Set());
-  
-  // Swipe state
-  const touchStart = useRef(0);
-  const touchId = useRef<number | null>(null);
+
+  // ===== SWIPE STATE (NEW) =====
+  const [swipeX, setSwipeX] = useState(0);
+  const [swipingId, setSwipingId] = useState<number | null>(null);
+  const touchStartX = useRef(0);
 
   const visibleOrders = orders.filter((o) => {
     const matchesFilter = filter === "all" || o.status === filter;
     const matchesQuery = !query.trim() || 
       String(o.id).includes(query) || 
-      String(o.userId).includes(query) || // <-- Ye line add karo
+      String(o.userId).includes(query) ||
       o.utr.includes(query) || 
       String(o.price).includes(query);
     return matchesFilter && matchesQuery;
@@ -185,19 +185,27 @@ export function ReviewDesk({ initialOrders }: { initialOrders: Order[] }) {
     return () => Object.values(timers.current).forEach(clearTimeout);
   }, []);
 
-  // Swipe handlers
+  // ===== SWIPE HANDLERS (NEW) =====
   const onTouchStart = (e: React.TouchEvent, id: number) => {
-    touchStart.current = e.touches[0].clientX;
-    touchId.current = id;
+    touchStartX.current = e.touches[0].clientX;
+    setSwipingId(id);
+    setSwipeX(0);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (swipingId === null) return;
+    const dx = e.touches[0].clientX - touchStartX.current;
+    setSwipeX(dx);
   };
 
   const onTouchEnd = (e: React.TouchEvent) => {
-    if (touchId.current === null) return;
-    const dx = e.changedTouches[0].clientX - touchStart.current;
+    if (swipingId === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
     if (Math.abs(dx) > 90) {
-      handleReview(touchId.current, dx > 0 ? "approved" : "rejected");
+      handleReview(swipingId, dx > 0 ? "approved" : "rejected");
     }
-    touchId.current = null;
+    setSwipeX(0);
+    setSwipingId(null);
   };
 
   return (
@@ -231,9 +239,14 @@ export function ReviewDesk({ initialOrders }: { initialOrders: Order[] }) {
           <div className="flex items-center gap-4 flex-1">
             <h2 className="text-lg font-extrabold whitespace-nowrap">Deposit Orders</h2>
             <label className="flex items-center gap-2 bg-[var(--panel-2)] rounded-xl px-3 border-2 border-transparent focus-within:border-[var(--saffron)] flex-1 max-w-md">
-              <Search className="w-4 h-4 text-[var(--ink-2)]" />
-              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="User ID, UTR or amount" className="flex-1 bg-transparent py-2 outline-none text-sm" />
-            </label>
+  <Search className="w-4 h-4 text-[var(--ink-2)]" />
+  <input 
+    value={query} 
+    onChange={(e) => setQuery(e.target.value)} 
+    placeholder="User ID, UTR or amount" 
+    className="flex-1 bg-transparent py-2 outline-none focus:outline-none focus:ring-0 focus:ring-offset-0 text-sm" 
+  />
+</label>
           </div>
           <div className="flex items-center gap-3">
              <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
@@ -296,31 +309,51 @@ export function ReviewDesk({ initialOrders }: { initialOrders: Order[] }) {
           </table>
         </div>
 
-        {/* MOBILE VIEW: List with Swipe */}
+        {/* MOBILE VIEW: List with Swipe Animation */}
         <div className="md:hidden flex-1 overflow-y-auto p-2">
           {visibleOrders.length === 0 ? (
             <div className="text-center p-8 text-[var(--ink-2)] text-sm">No orders match this filter.</div>
           ) : (
             visibleOrders.map((o) => (
-              <button
+              <div
                 key={o.id}
-                onClick={() => { setSelectedId(o.id); setIsSheetOpen(true); }}
-                onTouchStart={(e) => onTouchStart(e, o.id)}
-                onTouchEnd={onTouchEnd}
-                className={`w-full text-left p-3 rounded-xl mb-1.5 border-2 transition-all ${selectedId === o.id ? "border-[var(--saffron)] bg-[var(--saffron-soft)]" : "border-transparent bg-[var(--panel)] hover:bg-[var(--panel-2)]"}`}
+                className="relative rounded-xl mb-1.5 overflow-hidden bg-[var(--panel-2)]"
               >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <b className="text-lg font-extrabold">{inr(o.price)}</b>
-                    <div className="text-xs text-[var(--ink-2)] mt-0.5">#{o.id} · {o.formattedDate}</div>
-                  </div>
-                  <div className="text-right">
-                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${o.status === "pending" ? "bg-[var(--warn-soft)] text-[var(--warn)]" : o.status === "approved" ? "bg-[var(--ok-soft)] text-[var(--ok)]" : "bg-[var(--bad-soft)] text-[var(--bad)]"}`}>
-                      {cap(o.status)}
-                    </span>
-                  </div>
+                {/* Swipe Background (HTML jaisa) */}
+                <div className="absolute inset-0 flex justify-between items-center px-5 font-extrabold text-white bg-gradient-to-r from-[var(--ok)] to-[var(--bad)]">
+                  <span>Approve</span>
+                  <span>Reject</span>
                 </div>
-              </button>
+
+                {/* Actual Card */}
+                <button
+                  onClick={() => { setSelectedId(o.id); setIsSheetOpen(true); }}
+                  onTouchStart={(e) => onTouchStart(e, o.id)}
+                  onTouchMove={onTouchMove}
+                  onTouchEnd={onTouchEnd}
+                  style={{
+                    transform: swipingId === o.id ? `translateX(${swipeX}px)` : "translateX(0px)",
+                    transition: swipingId === o.id ? "none" : "transform 0.2s ease-out",
+                  }}
+                  className={`relative w-full text-left p-3 rounded-xl border-2 touch-pan-y ${
+                    selectedId === o.id
+                      ? "border-[var(--saffron)] bg-[var(--saffron-soft)]"
+                      : "border-transparent bg-[var(--panel)] hover:bg-[var(--panel-2)]"
+                  }`}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <b className="text-lg font-extrabold">{inr(o.price)}</b>
+                      <div className="text-xs text-[var(--ink-2)] mt-0.5">#{o.id} · {o.formattedDate}</div>
+                    </div>
+                    <div className="text-right">
+                      <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${o.status === "pending" ? "bg-[var(--warn-soft)] text-[var(--warn)]" : o.status === "approved" ? "bg-[var(--ok-soft)] text-[var(--ok)]" : "bg-[var(--bad-soft)] text-[var(--bad)]"}`}>
+                        {cap(o.status)}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              </div>
             ))
           )}
         </div>

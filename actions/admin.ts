@@ -7,12 +7,12 @@ import { revalidatePath } from "next/cache";
 import { hash } from "@node-rs/argon2";
 
 // 1. Create Deposit Order (Admin)
-export async function adminCreateDeposit(data: { userId: number; price: number; tokens: number; utr: string }) {
+export async function adminCreateDeposit(data: { userId: number; price: number; tokens: number; utr: string; dealDate: string }) {
   await requireAdmin("manage_admins");
   try {
     await db.execute(sql`
-      insert into deposit_orders (user_id, price_inr, tokens, utr, status)
-      values (${data.userId}, ${data.price}, ${data.tokens}, ${data.utr}, 'pending')
+      insert into deposit_orders (user_id, price_inr, tokens, utr, status, deal_date)
+      values (${data.userId}, ${data.price}, ${data.tokens}, ${data.utr}, 'pending', ${data.dealDate}::timestamptz)
     `);
     revalidatePath("/dashboard/deposit");
     revalidatePath("/dashboard/settings");
@@ -56,29 +56,29 @@ export async function adminCreateUser(data: { id: number; balance: number; pin: 
     return { error: "Failed to create user." };
   }
 }
-
-// 4. Delete Deposit Order
+// Admin delete deposit order
 export async function adminDeleteDeposit(id: number) {
   await requireAdmin("manage_admins");
   try {
-    await db.execute(sql`delete from deposit_orders where id = ${id} and status = 'pending'`);
+    await db.execute(sql`delete from deposit_orders where id = ${id}`);
     revalidatePath("/dashboard/deposit");
     revalidatePath("/dashboard/settings");
     return { success: true };
   } catch (e) {
-    return { error: "Cannot delete. Order may be approved or have ledger entries." };
+    return { error: "Cannot delete. Order may have ledger entries." };
   }
 }
 
-// 5. Delete Withdraw Order
+// Admin delete withdraw order
+
 export async function adminDeleteWithdraw(id: number) {
   await requireAdmin("manage_admins");
   try {
-    await db.execute(sql`delete from withdraw_orders where id = ${id} and status = 'pending'`);
+    await db.execute(sql`delete from withdraw_orders where id = ${id}`);
     revalidatePath("/dashboard/withdraw");
     revalidatePath("/dashboard/settings");
     return { success: true };
   } catch (e) {
-    return { error: "Cannot delete. Order may be approved or have ledger entries." };
+    return { error: "Cannot delete. Order may have ledger entries." };
   }
 }

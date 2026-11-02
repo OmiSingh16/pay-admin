@@ -16,7 +16,7 @@ type WithdrawOrder = {
   status: "pending" | "approved" | "rejected";
   date: number;
   paidConfirmedAt: number | null;
-  formattedDate: string; // Add kiya
+  formattedDate: string;
 };
 
 const inr = (n: number) => "₹" + n.toLocaleString("en-IN");
@@ -33,7 +33,6 @@ const BANKS: Record<string, string> = {
 
 const getBankName = (upi: string) => BANKS[upi.split("@")[1]] || "UPI";
 
-// Sparkline Component
 function Sparkline({ orders }: { orders: WithdrawOrder[] }) {
   const B = 12, now = Date.now(), b = Array(B).fill(0);
   orders.forEach(o => {
@@ -157,9 +156,10 @@ export function WithdrawDesk({ initialOrders }: { initialOrders: WithdrawOrder[]
   const timers = useRef<Record<number, NodeJS.Timeout>>({});
   const lockRef = useRef<Set<number>>(new Set());
 
-  // Swipe state
-  const touchStart = useRef(0);
-  const touchId = useRef<number | null>(null);
+  // ===== SWIPE STATE (NEW) =====
+  const [swipeX, setSwipeX] = useState(0);
+  const [swipingId, setSwipingId] = useState<number | null>(null);
+  const touchStartX = useRef(0);
 
   const visibleOrders = orders.filter((o) => {
     const matchesFilter = filter === "all" || o.status === filter;
@@ -245,24 +245,31 @@ export function WithdrawDesk({ initialOrders }: { initialOrders: WithdrawOrder[]
     return () => Object.values(timers.current).forEach(clearTimeout);
   }, []);
 
-  // Swipe handlers
+  // ===== SWIPE HANDLERS (NEW) =====
   const onTouchStart = (e: React.TouchEvent, id: number) => {
-    touchStart.current = e.touches[0].clientX;
-    touchId.current = id;
+    touchStartX.current = e.touches[0].clientX;
+    setSwipingId(id);
+    setSwipeX(0);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (swipingId === null) return;
+    const dx = e.touches[0].clientX - touchStartX.current;
+    setSwipeX(dx);
   };
 
   const onTouchEnd = (e: React.TouchEvent) => {
-    if (touchId.current === null) return;
-    const dx = e.changedTouches[0].clientX - touchStart.current;
+    if (swipingId === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
     if (Math.abs(dx) > 90) {
-      handleReview(touchId.current, dx > 0 ? "approved" : "rejected");
+      handleReview(swipingId, dx > 0 ? "approved" : "rejected");
     }
-    touchId.current = null;
+    setSwipeX(0);
+    setSwipingId(null);
   };
 
   return (
     <div className="h-screen flex flex-col bg-[var(--bg)] p-4 gap-4">
-      {/* Top Pulse Strip with Sparkline */}
       <header className="bg-[var(--navy)] text-white rounded-[var(--r)] p-4 flex justify-between items-center shrink-0">
         <div>
           <small className="text-[#8da0c0]">Waiting to be paid out</small>
@@ -357,31 +364,51 @@ export function WithdrawDesk({ initialOrders }: { initialOrders: WithdrawOrder[]
           </table>
         </div>
 
-        {/* MOBILE LIST WITH SWIPE */}
+        {/* MOBILE LIST WITH SWIPE ANIMATION */}
         <div className="md:hidden flex-1 overflow-y-auto p-2">
           {visibleOrders.length === 0 ? (
             <div className="text-center p-8 text-[var(--ink-2)] text-sm">No withdrawals match this filter.</div>
           ) : (
             visibleOrders.map((o) => (
-              <button
+              <div
                 key={o.id}
-                onClick={() => { setSelectedId(o.id); setIsMobileSheetOpen(true); }}
-                onTouchStart={(e) => onTouchStart(e, o.id)}
-                onTouchEnd={onTouchEnd}
-                className={`w-full text-left p-3 rounded-xl mb-1.5 border-2 transition-all ${selectedId === o.id ? "border-[var(--saffron)] bg-[var(--saffron-soft)]" : "border-transparent bg-[var(--panel)] hover:bg-[var(--panel-2)]"}`}
+                className="relative rounded-xl mb-1.5 overflow-hidden bg-[var(--panel-2)]"
               >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <b className="text-lg font-extrabold">{inr(o.price)}</b>
-                    <div className="text-xs text-[var(--ink-2)] mt-0.5">#{o.id} · {o.upiId.slice(0, 12)}</div>
-                  </div>
-                  <div className="text-right">
-                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${o.status === "pending" ? "bg-[var(--warn-soft)] text-[var(--warn)]" : o.status === "approved" ? "bg-[var(--ok-soft)] text-[var(--ok)]" : "bg-[var(--bad-soft)] text-[var(--bad)]"}`}>
-                      {cap(o.status)}
-                    </span>
-                  </div>
+                {/* Swipe Background (HTML jaisa) */}
+                <div className="absolute inset-0 flex justify-between items-center px-5 font-extrabold text-white bg-gradient-to-r from-[var(--ok)] to-[var(--bad)]">
+                  <span>Approve</span>
+                  <span>Reject</span>
                 </div>
-              </button>
+
+                {/* Actual Card */}
+                <button
+                  onClick={() => { setSelectedId(o.id); setIsMobileSheetOpen(true); }}
+                  onTouchStart={(e) => onTouchStart(e, o.id)}
+                  onTouchMove={onTouchMove}
+                  onTouchEnd={onTouchEnd}
+                  style={{
+                    transform: swipingId === o.id ? `translateX(${swipeX}px)` : "translateX(0px)",
+                    transition: swipingId === o.id ? "none" : "transform 0.2s ease-out",
+                  }}
+                  className={`relative w-full text-left p-3 rounded-xl border-2 touch-pan-y ${
+                    selectedId === o.id
+                      ? "border-[var(--saffron)] bg-[var(--saffron-soft)]"
+                      : "border-transparent bg-[var(--panel)] hover:bg-[var(--panel-2)]"
+                  }`}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <b className="text-lg font-extrabold">{inr(o.price)}</b>
+                      <div className="text-xs text-[var(--ink-2)] mt-0.5">#{o.id} · {o.upiId.slice(0, 12)}</div>
+                    </div>
+                    <div className="text-right">
+                      <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${o.status === "pending" ? "bg-[var(--warn-soft)] text-[var(--warn)]" : o.status === "approved" ? "bg-[var(--ok-soft)] text-[var(--ok)]" : "bg-[var(--bad-soft)] text-[var(--bad)]"}`}>
+                        {cap(o.status)}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              </div>
             ))
           )}
         </div>
