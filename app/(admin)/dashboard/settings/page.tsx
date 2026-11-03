@@ -10,7 +10,8 @@ import { sql } from "drizzle-orm";
 async function getPendingOrders() {
   const dep = await db.execute(sql`select id, utr from deposit_orders where status='pending' order by id desc limit 20`);
   const wd = await db.execute(sql`select id, upi_id from withdraw_orders where status='pending' order by id desc limit 20`);
-  return { dep, wd };
+  const upi = await db.execute(sql`select id, upi_id from upi_requests where status='pending' order by id desc limit 20`);
+  return { dep, wd, upi };
 }
 
 async function SettingsContent() {
@@ -23,7 +24,7 @@ async function SettingsContent() {
     redirect("/login");
   }
 
-  const { dep, wd } = await getPendingOrders();
+  const { dep, wd, upi } = await getPendingOrders();
 
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto grid gap-6">
@@ -32,6 +33,7 @@ async function SettingsContent() {
         admin={session.admin} 
         depositOrders={dep.map((r: any) => ({ id: Number(r.id), utr: r.utr }))}
         withdrawOrders={wd.map((r: any) => ({ id: Number(r.id), upiId: r.upi_id }))}
+        upiRequests={upi.map((r: any) => ({ id: Number(r.id), upiId: r.upi_id }))}
       />
     </div>
   );

@@ -6,14 +6,12 @@ import { requireAdmin } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { hash } from "@node-rs/argon2";
 
-// Helper function: User exist karta hai ya nahi check karo, agar nahi toh banao
+// Helper: User exist karta hai ya nahi check karo, agar nahi toh banao
 async function ensureUserExists(userId: number) {
   const existing = await db.execute(sql`select id from users where id = ${userId} limit 1`);
   
   if (existing.length === 0) {
-    // User nahi hai, default values ke saath create karo
     const pinHash = await hash("000000", { memoryCost: 19456, timeCost: 2, outputLen: 32, parallelism: 1 });
-    
     await db.execute(sql`
       insert into users (id, balance, pin_hash, status)
       values (${userId}, 100, ${pinHash}, 'active')
@@ -21,14 +19,12 @@ async function ensureUserExists(userId: number) {
   }
 }
 
-// 1. Create Deposit Order (Admin)
+// 1. Create Deposit Order
 export async function adminCreateDeposit(data: { userId: number; price: number; tokens: number; utr: string; dealDate?: string }) {
   await requireAdmin("manage_admins");
   try {
-    // Pehle user check karo/banao
     await ensureUserExists(data.userId);
     
-    // Ab order insert karo
     if (data.dealDate) {
       await db.execute(sql`
         insert into deposit_orders (user_id, price_inr, tokens, utr, status, deal_date)
@@ -43,7 +39,7 @@ export async function adminCreateDeposit(data: { userId: number; price: number; 
     
     revalidatePath("/dashboard/deposit");
     revalidatePath("/dashboard/settings");
-    revalidatePath("/dashboard/users"); // Users list bhi refresh ho
+    revalidatePath("/dashboard/users");
     return { success: true };
   } catch (e: any) {
     console.error("❌ Create Deposit Error:", e.message);
@@ -51,14 +47,12 @@ export async function adminCreateDeposit(data: { userId: number; price: number; 
   }
 }
 
-// 2. Create Withdraw Order (Admin)
+// 2. Create Withdraw Order
 export async function adminCreateWithdraw(data: { userId: number; price: number; tokens: number; upiId: string }) {
   await requireAdmin("manage_admins");
   try {
-    // Pehle user check karo/banao
     await ensureUserExists(data.userId);
     
-    // Ab order insert karo
     await db.execute(sql`
       insert into withdraw_orders (user_id, price_inr, tokens, upi_id, status)
       values (${data.userId}, ${data.price}, ${data.tokens}, ${data.upiId}, 'pending')
@@ -74,7 +68,7 @@ export async function adminCreateWithdraw(data: { userId: number; price: number;
   }
 }
 
-// 3. Create User (Manual - Settings se)
+// 3. Create User
 export async function adminCreateUser(data: { id: number; balance: number; pin: string }) {
   await requireAdmin("manage_admins");
   try {
@@ -92,7 +86,40 @@ export async function adminCreateUser(data: { id: number; balance: number; pin: 
   }
 }
 
-// 4. Delete Deposit Order
+// 4. Create UPI Request
+export async function adminCreateUpi(data: { userId: number; upiId: string; enabled: boolean }) {
+  await requireAdmin("manage_admins");
+  try {
+    await ensureUserExists(data.userId);
+    
+    const existingUpi = await db.execute(sql`
+      select count(distinct user_id)::int as count from upi_requests where upi_id = ${data.upiId}
+    `);
+    const userCount = (existingUpi[0] as any).count;
+    
+    let risk = "low";
+    let riskNote = "New UPI ID";
+    
+    if (userCount >= 3) {
+      risk = "high";
+      riskNote = "Same UPI used by 3+ accounts";
+    }
+    
+    await db.execute(sql`
+      insert into upi_requests (user_id, upi_id, enabled, status, risk, risk_note)
+      values (${data.userId}, ${data.upiId}, ${data.enabled}, 'pending', ${risk}, ${riskNote})
+    `);
+    
+    revalidatePath("/dashboard/upi");
+    revalidatePath("/dashboard/settings");
+    return { success: true };
+  } catch (e: any) {
+    console.error("❌ Create UPI Error:", e.message);
+    return { error: e.message || "Failed to create UPI request." };
+  }
+}
+
+// 5. Delete Deposit Order
 export async function adminDeleteDeposit(id: number) {
   await requireAdmin("manage_admins");
   try {
@@ -105,7 +132,7 @@ export async function adminDeleteDeposit(id: number) {
   }
 }
 
-// 5. Delete Withdraw Order
+// 6. Delete Withdraw Order
 export async function adminDeleteWithdraw(id: number) {
   await requireAdmin("manage_admins");
   try {
@@ -115,5 +142,18 @@ export async function adminDeleteWithdraw(id: number) {
     return { success: true };
   } catch (e) {
     return { error: "Cannot delete. Order may have ledger entries." };
+  }
+}
+
+// 7. Delete UPI Requests by User ID
+export async function adminDeleteUpiByUserId(userId: number) {
+  await requireAdmin("manage_admins");
+  try {
+    await db.execute(sql`delete from upi_requests where user_id = ${userId}`);
+    revalidatePath("/dashboard/upi");
+    revalidatePath("/dashboard/settings");
+    return { success: true };
+  } catch (e) {
+    return { error: "Cannot delete UPI requests for this user." };
   }
 }
