@@ -2,6 +2,8 @@ import { db } from "@/lib/db";
 import { sql } from "drizzle-orm";
 
 export async function getDepositOrders() {
+  console.log("📥 [getDepositOrders] Fetching orders from DB...");
+  
   const result = await db.execute(sql`
     select 
       o.id, 
@@ -17,6 +19,9 @@ export async function getDepositOrders() {
     limit 500
   `);
 
+  console.log("📥 [getDepositOrders] Fetched", result.length, "orders");
+  console.log("📥 [getDepositOrders] Pending count:", result.filter((r: any) => r.status === "pending").length);
+
   return result.map((r: any) => ({
     id: Number(r.id),
     userId: Number(r.user_id),
@@ -25,10 +30,9 @@ export async function getDepositOrders() {
     utr: r.utr,
     status: r.status as "pending" | "approved" | "rejected",
     date: new Date(r.deal_date).getTime(),
-    formattedDate: r.formatted_date, // <-- Ye add karo
+    formattedDate: r.formatted_date,
   }));
 }
-
 export async function getWithdrawOrders() {
   const result = await db.execute(sql`
     select 

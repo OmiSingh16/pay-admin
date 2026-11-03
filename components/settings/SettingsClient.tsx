@@ -58,7 +58,6 @@ export function SettingsClient({
   const [wdForm, setWdForm] = useState({
     userId: "",
     price: "",
-    tokens: "",
     upiId: "",
   });
   const [userForm, setUserForm] = useState({ id: "", balance: "0", pin: "" });
@@ -97,13 +96,13 @@ export function SettingsClient({
     const res = await adminCreateWithdraw({
       userId: Number(wdForm.userId),
       price: Number(wdForm.price),
-      tokens: Number(wdForm.tokens),
+      tokens: Number(wdForm.price),
       upiId: wdForm.upiId,
     });
     if (res.error) toast(res.error);
     else {
       toast("Withdraw order created");
-      setWdForm({ userId: "", price: "", tokens: "", upiId: "" });
+      setWdForm({ userId: "", price: "", upiId: "" });
       setActiveAction(null);
       router.refresh();
     }
@@ -369,70 +368,58 @@ const handleDeleteWdById = async () => {
 
             {/* CREATE WITHDRAW FORM */}
             {activeAction === "create_withdraw" && (
-              <form
-                onSubmit={handleCreateWithdraw}
-                className="grid gap-3 md:gap-4"
-              >
-                <h2 className="text-xl md:text-2xl font-extrabold mb-1 md:mb-2">
-                  Create Withdraw
-                </h2>
-                <div className="grid grid-cols-1 gap-3 md:gap-4">
-                  <label className="grid gap-1 text-xs md:text-sm font-bold text-[var(--ink-2)]">
-                    User ID
-                    <input
-                      required
-                      type="number"
-                      value={wdForm.userId}
-                      onChange={(e) =>
-                        setWdForm({ ...wdForm, userId: e.target.value })
-                      }
-                      className="bg-[var(--panel-2)] rounded-xl px-3 py-2.5 text-[var(--ink)] outline-none focus:ring-2 focus:ring-[var(--saffron)] text-sm"
-                    />
-                  </label>
-                  <label className="grid gap-1 text-xs md:text-sm font-bold text-[var(--ink-2)]">
-                    Amount (₹)
-                    <input
-                      required
-                      type="number"
-                      value={wdForm.price}
-                      onChange={(e) =>
-                        setWdForm({ ...wdForm, price: e.target.value })
-                      }
-                      className="bg-[var(--panel-2)] rounded-xl px-3 py-2.5 text-[var(--ink)] outline-none focus:ring-2 focus:ring-[var(--saffron)] text-sm"
-                    />
-                  </label>
-                  <label className="grid gap-1 text-xs md:text-sm font-bold text-[var(--ink-2)]">
-                    Tokens
-                    <input
-                      required
-                      type="number"
-                      value={wdForm.tokens}
-                      onChange={(e) =>
-                        setWdForm({ ...wdForm, tokens: e.target.value })
-                      }
-                      className="bg-[var(--panel-2)] rounded-xl px-3 py-2.5 text-[var(--ink)] outline-none focus:ring-2 focus:ring-[var(--saffron)] text-sm"
-                    />
-                  </label>
-                  <label className="grid gap-1 text-xs md:text-sm font-bold text-[var(--ink-2)]">
-                    UPI ID
-                    <input
-                      required
-                      value={wdForm.upiId}
-                      onChange={(e) =>
-                        setWdForm({ ...wdForm, upiId: e.target.value })
-                      }
-                      className="bg-[var(--panel-2)] rounded-xl px-3 py-2.5 text-[var(--ink)] outline-none focus:ring-2 focus:ring-[var(--saffron)] text-sm"
-                    />
-                  </label>
-                </div>
-                <button
-                  type="submit"
-                  className="bg-[var(--saffron)] text-white py-3 rounded-xl font-bold mt-2 hover:bg-[#e67a00] transition-colors text-sm md:text-base"
-                >
-                  Create Withdraw
-                </button>
-              </form>
-            )}
+  <form
+    onSubmit={handleCreateWithdraw}
+    className="grid gap-3 md:gap-4"
+  >
+    <h2 className="text-xl md:text-2xl font-extrabold mb-1 md:mb-2">
+      Create Withdraw
+    </h2>
+    <div className="grid grid-cols-1 gap-3 md:gap-4">
+      <label className="grid gap-1 text-xs md:text-sm font-bold text-[var(--ink-2)]">
+        User ID
+        <input
+          required
+          type="number"
+          value={wdForm.userId}
+          onChange={(e) =>
+            setWdForm({ ...wdForm, userId: e.target.value })
+          }
+          className="bg-[var(--panel-2)] rounded-xl px-3 py-2.5 text-[var(--ink)] outline-none focus:ring-2 focus:ring-[var(--saffron)] text-sm"
+        />
+      </label>
+      <label className="grid gap-1 text-xs md:text-sm font-bold text-[var(--ink-2)]">
+        Amount (₹)
+        <input
+          required
+          type="number"
+          value={wdForm.price}
+          onChange={(e) =>
+            setWdForm({ ...wdForm, price: e.target.value })
+          }
+          className="bg-[var(--panel-2)] rounded-xl px-3 py-2.5 text-[var(--ink)] outline-none focus:ring-2 focus:ring-[var(--saffron)] text-sm"
+        />
+      </label>
+      <label className="grid gap-1 text-xs md:text-sm font-bold text-[var(--ink-2)]">
+        UPI ID
+        <input
+          required
+          value={wdForm.upiId}
+          onChange={(e) =>
+            setWdForm({ ...wdForm, upiId: e.target.value })
+          }
+          className="bg-[var(--panel-2)] rounded-xl px-3 py-2.5 text-[var(--ink)] outline-none focus:ring-2 focus:ring-[var(--saffron)] text-sm"
+        />
+      </label>
+    </div>
+    <button
+      type="submit"
+      className="bg-[var(--saffron)] text-white py-3 rounded-xl font-bold mt-2 hover:bg-[#e67a00] transition-colors text-sm md:text-base"
+    >
+      Create Withdraw
+    </button>
+  </form>
+)}
 
             {/* CREATE USER FORM */}
             {activeAction === "create_user" && (

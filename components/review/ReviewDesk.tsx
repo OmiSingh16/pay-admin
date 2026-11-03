@@ -102,10 +102,14 @@ export function ReviewDesk({ initialOrders }: { initialOrders: Order[] }) {
   const timers = useRef<Record<number, NodeJS.Timeout>>({});
   const lockRef = useRef<Set<number>>(new Set());
 
-  // ===== SWIPE STATE (NEW) =====
   const [swipeX, setSwipeX] = useState(0);
   const [swipingId, setSwipingId] = useState<number | null>(null);
   const touchStartX = useRef(0);
+
+  // Sync local state with server data on refresh
+  useEffect(() => {
+    setOrders(initialOrders);
+  }, [initialOrders]);
 
   const visibleOrders = orders.filter((o) => {
     const matchesFilter = filter === "all" || o.status === filter;
@@ -138,13 +142,23 @@ export function ReviewDesk({ initialOrders }: { initialOrders: Order[] }) {
       lockRef.current.delete(id);
       
       const res = await reviewDeposit({ id, action });
+      
       if (res.error) {
-        toast(res.error);
-        setOrders(prevOrders);
+        if (res.error.includes("already reviewed")) {
+          toast("This order was already reviewed. Refreshing...");
+          router.refresh(); 
+        } else {
+          toast(res.error);
+          setOrders(prevOrders); 
+        }
       } else {
-        router.refresh();
+        setTimeout(() => {
+          setIsRefreshing(true);
+          router.refresh();
+          setTimeout(() => setIsRefreshing(false), 800);
+        }, 2000); 
       }
-    }, 5000);
+    }, 3000);
 
     timers.current[id] = timerId;
 
@@ -156,7 +170,7 @@ export function ReviewDesk({ initialOrders }: { initialOrders: Order[] }) {
       lockRef.current.delete(id);
       setOrders(prevOrders);
       setSelectedId(id);
-    }, 5000);
+    }, 3000);
   };
 
   const moveSel = (d: number) => {
@@ -185,7 +199,6 @@ export function ReviewDesk({ initialOrders }: { initialOrders: Order[] }) {
     return () => Object.values(timers.current).forEach(clearTimeout);
   }, []);
 
-  // ===== SWIPE HANDLERS (NEW) =====
   const onTouchStart = (e: React.TouchEvent, id: number) => {
     touchStartX.current = e.touches[0].clientX;
     setSwipingId(id);
@@ -210,8 +223,6 @@ export function ReviewDesk({ initialOrders }: { initialOrders: Order[] }) {
 
   return (
     <div className="h-screen flex flex-col bg-[var(--bg)] p-4 gap-4">
-      
-      {/* Top Pulse Strip with Sparkline */}
       <header className="bg-[var(--navy)] text-white rounded-[var(--r)] p-4 flex justify-between items-center shrink-0">
         <div>
           <small className="text-[#8da0c0]">Waiting for your review</small>
@@ -231,22 +242,19 @@ export function ReviewDesk({ initialOrders }: { initialOrders: Order[] }) {
         </div>
       </header>
 
-      {/* Main Content Area */}
       <div className="flex-1 bg-[var(--panel)] rounded-[var(--r)] flex flex-col min-h-0 overflow-hidden">
-        
-        {/* Toolbar (Search & Filters) */}
         <div className="p-4 border-b border-[var(--line)] flex flex-col md:flex-row justify-between md:items-center gap-4">
           <div className="flex items-center gap-4 flex-1">
             <h2 className="text-lg font-extrabold whitespace-nowrap">Deposit Orders</h2>
             <label className="flex items-center gap-2 bg-[var(--panel-2)] rounded-xl px-3 border-2 border-transparent focus-within:border-[var(--saffron)] flex-1 max-w-md">
-  <Search className="w-4 h-4 text-[var(--ink-2)]" />
-  <input 
-    value={query} 
-    onChange={(e) => setQuery(e.target.value)} 
-    placeholder="User ID, UTR or amount" 
-    className="flex-1 bg-transparent py-2 outline-none focus:outline-none focus:ring-0 focus:ring-offset-0 text-sm" 
-  />
-</label>
+              <Search className="w-4 h-4 text-[var(--ink-2)]" />
+              <input 
+                value={query} 
+                onChange={(e) => setQuery(e.target.value)} 
+                placeholder="User ID, UTR or amount" 
+                className="flex-1 bg-transparent py-2 outline-none focus:outline-none focus:ring-0 focus:ring-offset-0 text-sm" 
+              />
+            </label>
           </div>
           <div className="flex items-center gap-3">
              <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
@@ -262,7 +270,6 @@ export function ReviewDesk({ initialOrders }: { initialOrders: Order[] }) {
           </div>
         </div>
 
-        {/* DESKTOP VIEW: Table */}
         <div className="hidden md:block flex-1 overflow-auto">
           <table className="w-full text-left border-collapse">
             <thead className="bg-[var(--panel-2)] text-[var(--ink-2)] text-xs uppercase sticky top-0 z-10">
@@ -309,7 +316,6 @@ export function ReviewDesk({ initialOrders }: { initialOrders: Order[] }) {
           </table>
         </div>
 
-        {/* MOBILE VIEW: List with Swipe Animation */}
         <div className="md:hidden flex-1 overflow-y-auto p-2">
           {visibleOrders.length === 0 ? (
             <div className="text-center p-8 text-[var(--ink-2)] text-sm">No orders match this filter.</div>
@@ -319,13 +325,11 @@ export function ReviewDesk({ initialOrders }: { initialOrders: Order[] }) {
                 key={o.id}
                 className="relative rounded-xl mb-1.5 overflow-hidden bg-[var(--panel-2)]"
               >
-                {/* Swipe Background (HTML jaisa) */}
                 <div className="absolute inset-0 flex justify-between items-center px-5 font-extrabold text-white bg-gradient-to-r from-[var(--ok)] to-[var(--bad)]">
                   <span>Approve</span>
                   <span>Reject</span>
                 </div>
 
-                {/* Actual Card */}
                 <button
                   onClick={() => { setSelectedId(o.id); setIsSheetOpen(true); }}
                   onTouchStart={(e) => onTouchStart(e, o.id)}
@@ -358,7 +362,6 @@ export function ReviewDesk({ initialOrders }: { initialOrders: Order[] }) {
           )}
         </div>
 
-        {/* Mobile Bottom Sheet */}
         {selected && isSheetOpen && (
           <div className="md:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end justify-center" onClick={() => setIsSheetOpen(false)}>
             <div className="w-full bg-[var(--panel)] rounded-t-3xl p-5 pb-8 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>

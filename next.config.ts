@@ -1,11 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Experimental features off karo taaki production stable rahe
   cacheComponents: false,
   partialPrefetching: false,
-  
-  // Turbopack config (agar use kar rahe ho toh)
+  experimental: {
+    staleTimes: {
+      dynamic: 0,
+      static: 0,
+    },
+  },
   turbopack: {
     rules: {
       "*.css": {

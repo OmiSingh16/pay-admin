@@ -23,14 +23,34 @@ const inr = (n: number) => "₹" + n.toLocaleString("en-IN");
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const BANKS: Record<string, string> = {
-  mbk: "MobiKwik",
+  // PhonePe
   ybl: "PhonePe",
   ibl: "PhonePe",
+  axl: "PhonePe",
+  
+  // Google Pay
   okhdfcbank: "Google Pay",
   oksbi: "Google Pay",
+  okaxis: "Google Pay",
+  okicici: "Google Pay",
+  
+  // Paytm (Updated)
   paytm: "Paytm",
+  ptaxis: "Paytm",
+  ptyes: "Paytm",
+  ptsbi: "Paytm",
+  pthdfc: "Paytm",
+  pticici: "Paytm",
+  
+  // MobiKwik (Updated)
+  mbk: "MobiKwik",
+  mbkns: "MobiKwik",
+  ikwik: "MobiKwik",
+  
+  // Amazon Pay
+  apl: "Amazon Pay",
+  yapl: "Amazon Pay",
 };
-
 const getBankName = (upi: string) => BANKS[upi.split("@")[1]] || "UPI";
 
 function Sparkline({ orders }: { orders: WithdrawOrder[] }) {
@@ -156,10 +176,14 @@ export function WithdrawDesk({ initialOrders }: { initialOrders: WithdrawOrder[]
   const timers = useRef<Record<number, NodeJS.Timeout>>({});
   const lockRef = useRef<Set<number>>(new Set());
 
-  // ===== SWIPE STATE (NEW) =====
   const [swipeX, setSwipeX] = useState(0);
   const [swipingId, setSwipingId] = useState<number | null>(null);
   const touchStartX = useRef(0);
+
+  // Sync local state with server data on refresh
+  useEffect(() => {
+    setOrders(initialOrders);
+  }, [initialOrders]);
 
   const visibleOrders = orders.filter((o) => {
     const matchesFilter = filter === "all" || o.status === filter;
@@ -199,12 +223,21 @@ export function WithdrawDesk({ initialOrders }: { initialOrders: WithdrawOrder[]
       
       const res = await reviewWithdraw({ id, action });
       if (res.error) {
-        toast(res.error);
-        setOrders(prevOrders);
+        if (res.error.includes("already reviewed")) {
+          toast("This order was already reviewed. Refreshing...");
+          router.refresh(); 
+        } else {
+          toast(res.error);
+          setOrders(prevOrders); 
+        }
       } else {
-        router.refresh();
+        setTimeout(() => {
+          setIsRefreshing(true);
+          router.refresh();
+          setTimeout(() => setIsRefreshing(false), 800);
+        }, 2000); 
       }
-    }, 5000);
+    }, 3000);
 
     timers.current[id] = timerId;
 
@@ -216,7 +249,7 @@ export function WithdrawDesk({ initialOrders }: { initialOrders: WithdrawOrder[]
       lockRef.current.delete(id);
       setOrders(prevOrders);
       setSelectedId(id);
-    }, 5000);
+    }, 3000);
   };
 
   const moveSel = (d: number) => {
@@ -245,7 +278,6 @@ export function WithdrawDesk({ initialOrders }: { initialOrders: WithdrawOrder[]
     return () => Object.values(timers.current).forEach(clearTimeout);
   }, []);
 
-  // ===== SWIPE HANDLERS (NEW) =====
   const onTouchStart = (e: React.TouchEvent, id: number) => {
     touchStartX.current = e.touches[0].clientX;
     setSwipingId(id);
@@ -295,7 +327,7 @@ export function WithdrawDesk({ initialOrders }: { initialOrders: WithdrawOrder[]
             <h2 className="text-lg font-extrabold whitespace-nowrap">Withdrawal Orders</h2>
             <label className="flex items-center gap-2 bg-[var(--panel-2)] rounded-xl px-3 border-2 border-transparent focus-within:border-[var(--saffron)] flex-1 max-w-md">
               <Search className="w-4 h-4 text-[var(--ink-2)]" />
-              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Order ID, UPI or amount" className="flex-1 bg-transparent py-2 outline-none text-sm" />
+              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Order ID, UPI or amount" className="flex-1 bg-transparent py-2 outline-none focus:outline-none focus:ring-0 text-sm" />
             </label>
           </div>
           <div className="flex items-center gap-3">
@@ -374,13 +406,11 @@ export function WithdrawDesk({ initialOrders }: { initialOrders: WithdrawOrder[]
                 key={o.id}
                 className="relative rounded-xl mb-1.5 overflow-hidden bg-[var(--panel-2)]"
               >
-                {/* Swipe Background (HTML jaisa) */}
                 <div className="absolute inset-0 flex justify-between items-center px-5 font-extrabold text-white bg-gradient-to-r from-[var(--ok)] to-[var(--bad)]">
                   <span>Approve</span>
                   <span>Reject</span>
                 </div>
 
-                {/* Actual Card */}
                 <button
                   onClick={() => { setSelectedId(o.id); setIsMobileSheetOpen(true); }}
                   onTouchStart={(e) => onTouchStart(e, o.id)}
