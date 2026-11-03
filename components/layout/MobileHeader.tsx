@@ -6,11 +6,9 @@ export function MobileHeader() {
   const [logo, setLogo] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load logo from localStorage
     const savedLogo = localStorage.getItem("payorbit_logo");
     if (savedLogo) setLogo(savedLogo);
 
-    // Listen for logo updates from Settings
     const handleLogoUpdate = () => {
       const updatedLogo = localStorage.getItem("payorbit_logo");
       setLogo(updatedLogo);
@@ -20,29 +18,50 @@ export function MobileHeader() {
   }, []);
 
   return (
-    <header className="md:hidden flex justify-between items-center bg-[var(--panel)] p-4 rounded-[var(--r)] shadow-sm">
-      <div className="flex items-center gap-3">
-        {/* Logo ya fallback "PO" */}
-        {logo ? (
-          <img 
-            src={logo} 
-            alt="Logo" 
-            className="w-10 h-10 rounded-xl object-cover shrink-0" 
-          />
-        ) : (
-          <div className="w-10 h-10 rounded-xl bg-[var(--saffron)] grid place-items-center font-extrabold text-[var(--navy)] text-sm shrink-0">
-            PO
+    <header className="md:hidden sticky top-0 z-50 relative">
+      {/* Glow border */}
+      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[var(--saffron)] to-transparent opacity-80 shadow-[0_0_10px_var(--saffron)]" />
+
+      <div className="flex justify-between items-center bg-gradient-to-br from-[var(--navy)] via-[var(--navy-2)] to-[var(--navy)] px-4 py-3 rounded-b-2xl shadow-2xl shadow-[var(--navy)]/50 border-b border-white/10">
+        
+        {/* Logo + Brand */}
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <div className="absolute inset-0 rounded-xl bg-[var(--saffron)]/30 blur-lg" />
+            {logo ? (
+              <img 
+                src={logo} 
+                alt="Logo" 
+                className="relative w-10 h-10 rounded-xl object-cover shrink-0 ring-2 ring-[var(--saffron)]/50 shadow-lg" 
+              />
+            ) : (
+              <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--saffron)] to-[#ffb347] grid place-items-center font-extrabold text-[var(--navy)] text-sm shadow-lg shadow-[var(--saffron)]/50">
+                PO
+              </div>
+            )}
           </div>
-        )}
-        <div>
-          <h2 className="text-lg font-extrabold leading-tight">PayOrbit</h2>
-          <p className="text-[11px] text-[var(--ink-2)] font-semibold uppercase tracking-wider">Admin Console</p>
+
+          <div className="flex flex-col">
+            <h2 className="text-lg font-extrabold leading-tight text-white">
+              Pay<span className="text-[var(--saffron)]">Orbit</span>
+            </h2>
+            <p className="text-[10px] text-[#8da0c0] font-bold uppercase tracking-widest">
+              Admin Console
+            </p>
+          </div>
         </div>
+
+        {/* Live Indicator */}
+        <div className="flex items-center gap-2 bg-[var(--ok)]/10 px-3 py-1.5 rounded-full border border-[var(--ok)]/30 shadow-lg shadow-[var(--ok)]/20">
+  <span className="relative flex h-2 w-2">
+    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--ok)] opacity-75" />
+    <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--ok)]" />
+  </span>
+  <span className="text-[11px] font-extrabold text-[var(--ok)] tracking-wider">
+    LIVE
+  </span>
+</div>
       </div>
-      <span className="inline-flex gap-2 items-center bg-[var(--ok-soft)] text-[var(--ok)] px-3 py-1.5 rounded-full font-bold text-xs">
-        <i className="w-1.5 h-1.5 rounded-full bg-[var(--ok)] animate-pulse" />
-        Live
-      </span>
     </header>
   );
 }
