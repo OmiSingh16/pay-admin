@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { reviewUpi, bulkApproveUpi, toggleUpiStatus } from "@/actions/upi";
-import { Search, RefreshCw, Check, X, Clock, Zap, Copy, Landmark, Wallet, ShieldAlert, ShieldCheck, Shield } from "lucide-react";
+import { Search, RefreshCw, Check, X, Zap, Copy, Landmark, Wallet, Shield } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 
 type UpiRequest = {
@@ -13,7 +13,6 @@ type UpiRequest = {
   enabled: boolean;
   status: "pending" | "approved" | "rejected";
   risk: "low" | "medium" | "high";
-  riskNote: string;
   createdAt: number;
 };
 
@@ -80,7 +79,7 @@ export function UpiDesk({ initialRequests }: { initialRequests: UpiRequest[] }) 
 
     ids.forEach(id => { timers.current[id] = timerId; });
 
-    toast(`${ids.length > 1 ? ids.length + " requests" : "#" + ids[0]} ${action}`, () => {
+    toast(`${ids.length > 1 ? ids.length + " requests" : "Request"} ${action}`, () => {
       Object.values(timers.current).forEach(clearTimeout);
       timers.current = {};
       setRequests(prev);
@@ -181,98 +180,95 @@ export function UpiDesk({ initialRequests }: { initialRequests: UpiRequest[] }) 
           
           return (
             <article 
-  key={r.id} 
-  className="bg-[var(--panel)] rounded-[var(--r)] p-4 md:p-5 grid grid-cols-[auto_1fr] md:grid-cols-[auto_1fr_auto] gap-3 md:gap-4 items-start border-2 border-[var(--line)]/30 hover:border-[var(--saffron)]/50 transition-all duration-300 hover:shadow-lg group"
->
-  
-  {/* Status Tile */}
-  <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl grid place-items-center text-white shrink-0 ${tileColor} transition-transform group-hover:scale-105 mt-1`}>
-  <Landmark className="w-7 h-7" />
-</div>
+              key={r.id} 
+              className="bg-[var(--panel)] rounded-[var(--r)] p-4 md:p-5 grid grid-cols-[auto_1fr] md:grid-cols-[auto_1fr_auto] gap-3 md:gap-4 items-start border-2 border-[var(--line)]/30 hover:border-[var(--saffron)]/50 transition-all duration-300 hover:shadow-lg group"
+            >
+              
+              {/* Status Tile */}
+              <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl grid place-items-center text-white shrink-0 ${tileColor} transition-transform group-hover:scale-105 mt-1`}>
+                <Landmark className="w-7 h-7" />
+              </div>
 
-  {/* Info (Structured) */}
-  <div className="grid gap-3 min-w-0">
-    
-    {/* Row 1: ID, User, Status, Risk */}
-    <div className="flex items-center gap-2 flex-wrap">
-      <span className="text-lg font-extrabold text-[var(--ink)]">#{r.id}</span>
-      <span className="text-xs font-semibold text-[var(--ink-2)] bg-[var(--panel-2)] px-2 py-0.5 rounded-md">
-        User {r.userId}
-      </span>
-      
-      <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-        r.status === "pending" ? "bg-[var(--saffron-soft)] text-[var(--warn)]" 
-        : r.status === "approved" ? "bg-[var(--ok-soft)] text-[var(--ok)]" 
-        : "bg-[var(--bad-soft)] text-[var(--bad)]"
-      }`}>
-        {cap(r.status)}
-      </span>
+              {/* Info (Structured) */}
+              <div className="grid gap-3 min-w-0">
+                
+                {/* Row 1: User, Status, Risk (ID hataya) */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-semibold text-[var(--ink-2)] bg-[var(--panel-2)] px-2 py-0.5 rounded-md">
+                    User {r.userId}
+                  </span>
+                  
+                  <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                    r.status === "pending" ? "bg-[var(--saffron-soft)] text-[var(--warn)]" 
+                    : r.status === "approved" ? "bg-[var(--ok-soft)] text-[var(--ok)]" 
+                    : "bg-[var(--bad-soft)] text-[var(--bad)]"
+                  }`}>
+                    {cap(r.status)}
+                  </span>
 
-      <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold flex items-center gap-1 ${
-        r.risk === "low" ? "bg-[var(--ok-soft)] text-[var(--ok)]" 
-        : r.risk === "medium" ? "bg-[var(--saffron-soft)] text-[var(--warn)]" 
-        : "bg-[var(--bad-soft)] text-[var(--bad)]"
-      }`}>
-        <Shield className="w-3 h-3" />
-        {r.risk === "low" ? "Low" : r.risk === "medium" ? "Medium" : "High"} risk
-      </span>
-    </div>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold flex items-center gap-1 ${
+                    r.risk === "low" ? "bg-[var(--ok-soft)] text-[var(--ok)]" 
+                    : r.risk === "medium" ? "bg-[var(--saffron-soft)] text-[var(--warn)]" 
+                    : "bg-[var(--bad-soft)] text-[var(--bad)]"
+                  }`}>
+                    <Shield className="w-3 h-3" />
+                    {r.risk === "low" ? "Low" : r.risk === "medium" ? "Medium" : "High"} risk
+                  </span>
+                </div>
 
-    {/* Row 2: UPI ID + Bank + Copy */}
-    <div className="flex items-center gap-2 flex-wrap">
-      <span className="text-sm font-bold text-[var(--ink)] font-mono truncate">{r.upiId}</span>
-      <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${getBankColor(r.upiId)}`}>
-        {getBankName(r.upiId)}
-      </span>
-      <button 
-        onClick={() => { navigator.clipboard.writeText(r.upiId); toast("UPI copied"); }} 
-        className="p-1 rounded-lg hover:bg-[var(--panel-2)] transition-colors shrink-0"
-      >
-        <Copy className="w-3.5 h-3.5 text-[var(--ink-2)]" />
-      </button>
-    </div>
+                {/* Row 2: UPI ID + Bank + Copy */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-bold text-[var(--ink)] font-mono truncate">{r.upiId}</span>
+                  <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${getBankColor(r.upiId)}`}>
+                    {getBankName(r.upiId)}
+                  </span>
+                  <button 
+                    onClick={() => { navigator.clipboard.writeText(r.upiId); toast("UPI copied"); }} 
+                    className="p-1 rounded-lg hover:bg-[var(--panel-2)] transition-colors shrink-0"
+                  >
+                    <Copy className="w-3.5 h-3.5 text-[var(--ink-2)]" />
+                  </button>
+                </div>
 
-    {/* Row 3: Enabled, Date, Note */}
-    <div className="flex items-center gap-3 text-xs text-[var(--ink-2)] flex-wrap">
-      <button 
-        onClick={() => handleToggle(r.id, !r.enabled)}
-        className={`flex items-center gap-1.5 font-bold transition-colors ${r.enabled ? "text-[var(--ok)]" : "text-[var(--ink-2)]"}`}
-      >
-        <span className={`w-8 h-4 rounded-full relative transition-colors ${r.enabled ? "bg-[var(--ok)]" : "bg-[var(--ink-2)]"}`}>
-          <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${r.enabled ? "left-4" : "left-0.5"}`} />
-        </span>
-        {r.enabled ? "Enabled" : "Disabled"}
-      </button>
-      <span className="w-1 h-1 rounded-full bg-[var(--ink-2)]" />
-      <span>{new Date(r.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}</span>
-      <span className="w-1 h-1 rounded-full bg-[var(--ink-2)]" />
-      <span className="italic truncate max-w-[200px] md:max-w-none">{r.riskNote}</span>
-    </div>
-  </div>
+                {/* Row 3: Enabled, Date (riskNote hataya) */}
+                <div className="flex items-center gap-3 text-xs text-[var(--ink-2)] flex-wrap">
+                  <button 
+                    onClick={() => handleToggle(r.id, !r.enabled)}
+                    className={`flex items-center gap-1.5 font-bold transition-colors ${r.enabled ? "text-[var(--ok)]" : "text-[var(--ink-2)]"}`}
+                  >
+                    <span className={`w-8 h-4 rounded-full relative transition-colors ${r.enabled ? "bg-[var(--ok)]" : "bg-[var(--ink-2)]"}`}>
+                      <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${r.enabled ? "left-4" : "left-0.5"}`} />
+                    </span>
+                    {r.enabled ? "Enabled" : "Disabled"}
+                  </button>
+                  <span className="w-1 h-1 rounded-full bg-[var(--ink-2)]" />
+                  <span>{new Date(r.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}</span>
+                </div>
+              </div>
 
-  {/* Actions */}
-  {isPending ? (
-    <div className="col-span-2 md:col-span-1 flex md:flex-col gap-2 mt-2 md:mt-1">
-      <button 
-        onClick={() => handleReview([r.id], "approved")} 
-        className="flex-1 md:w-12 md:h-12 rounded-xl grid place-items-center bg-[var(--ok-soft)] text-[var(--ok)] hover:bg-[var(--ok)] hover:text-white transition-all hover:scale-105 shadow-sm"
-      >
-        <Check className="w-5 h-5" />
-      </button>
-      <button 
-        onClick={() => handleReview([r.id], "rejected")} 
-        className="flex-1 md:w-12 md:h-12 rounded-xl grid place-items-center bg-[var(--bad-soft)] text-[var(--bad)] hover:bg-[var(--bad)] hover:text-white transition-all hover:scale-105 shadow-sm"
-      >
-        <X className="w-5 h-5" />
-      </button>
-    </div>
-  ) : (
-    <div className="col-span-2 md:col-span-1 text-center md:text-right text-xs font-bold text-[var(--ink-2)] bg-[var(--panel-2)] px-3 py-1.5 rounded-lg md:mt-1">
-      Reviewed
-    </div>
-  )}
+              {/* Actions */}
+              {isPending ? (
+                <div className="col-span-2 md:col-span-1 flex md:flex-col gap-2 mt-2 md:mt-1">
+                  <button 
+                    onClick={() => handleReview([r.id], "approved")} 
+                    className="flex-1 md:w-12 md:h-12 rounded-xl grid place-items-center bg-[var(--ok-soft)] text-[var(--ok)] hover:bg-[var(--ok)] hover:text-white transition-all hover:scale-105 shadow-sm"
+                  >
+                    <Check className="w-5 h-5" />
+                  </button>
+                  <button 
+                    onClick={() => handleReview([r.id], "rejected")} 
+                    className="flex-1 md:w-12 md:h-12 rounded-xl grid place-items-center bg-[var(--bad-soft)] text-[var(--bad)] hover:bg-[var(--bad)] hover:text-white transition-all hover:scale-105 shadow-sm"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              ) : (
+                <div className="col-span-2 md:col-span-1 text-center md:text-right text-xs font-bold text-[var(--ink-2)] bg-[var(--panel-2)] px-3 py-1.5 rounded-lg md:mt-1">
+                  Reviewed
+                </div>
+              )}
 
-</article>
+            </article>
           );
         })}
       </div>
