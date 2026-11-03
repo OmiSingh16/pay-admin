@@ -23,7 +23,7 @@ export async function reviewDeposit(input: { id: number; action: "approved" | "r
     }
     
     revalidatePath("/dashboard/deposit");
-    revalidatePath("/dashboard");
+    // revalidatePath("/dashboard");
     return { success: true };
   } catch (e: any) {
     const msg = e.message || e.cause?.message || "";

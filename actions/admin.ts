@@ -39,7 +39,7 @@ export async function adminCreateDeposit(data: { userId: number; price: number; 
     
     revalidatePath("/dashboard/deposit");
     revalidatePath("/dashboard/settings");
-    revalidatePath("/dashboard/users");
+    // revalidatePath("/dashboard/users");
     return { success: true };
   } catch (e: any) {
     console.error("❌ Create Deposit Error:", e.message);

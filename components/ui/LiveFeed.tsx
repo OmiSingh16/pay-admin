@@ -19,7 +19,7 @@ const inr = (n: number) => "₹" + n.toLocaleString("en-IN");
 
 export function LiveFeed() {
   const { data } = useSWR<Activity[]>("/api/dashboard/activity", fetcher, {
-    refreshInterval: 10000, // 10 seconds polling
+    refreshInterval: 40000, // 10 seconds polling
   });
 
   const [newIds, setNewIds] = useState<Set<string>>(new Set());
